@@ -733,9 +733,15 @@ const area = $('image-area'), img = $('screen'), canvas = $('overlay'), ctx = ca
 const targetInput = $('target'), statusEl = $('status'), liveBtn = $('live'), widthSel = $('width');
 let target = '', live = false, press = null, dragging = false;
 
-targetInput.value = __DEFAULT_TARGET__;
+targetInput.value = new URLSearchParams(location.search).get('target') || __DEFAULT_TARGET__;
 
 function setStatus(m) { statusEl.textContent = m; }
+
+function syncUrl(t) {
+  const u = new URL(location.href);
+  if (t) u.searchParams.set('target', t); else u.searchParams.delete('target');
+  history.replaceState(history.state, '', u);
+}
 
 function api(path, data) {
   return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, ...data }) })
@@ -756,6 +762,7 @@ async function send(path, data) {
 async function connect() {
   target = targetInput.value.trim();
   if (!target) return setStatus('Enter a target host first');
+  syncUrl(target);
   setStatus('Connecting to ' + target + '...');
   const r = await api('/connect', {});
   if (!r.ok) return setStatus('Connect failed: ' + r.msg);
